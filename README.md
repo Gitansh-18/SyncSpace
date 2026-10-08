@@ -1,4 +1,4 @@
-# Collab Editor
+# SyncSpace
 
 Local-first collaborative document editor built for the House of Edtech fullstack assignment.
 

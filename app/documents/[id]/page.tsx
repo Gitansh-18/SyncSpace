@@ -122,7 +122,8 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
             <section className="rounded-lg border border-zinc-200 bg-white p-6">
               <h2 className="text-sm font-medium text-zinc-900">Add member</h2>
               <p className="mt-1 text-xs text-zinc-500">
-                Invite an existing user by email. Editors can edit; viewers are read-only.
+                Add a collaborator by email. If they don&apos;t have an account yet,
+                they&apos;ll receive an invitation to join.
               </p>
               <div className="mt-4">
                 <AddMemberForm documentId={document.id} />

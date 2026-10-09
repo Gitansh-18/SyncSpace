@@ -10,9 +10,10 @@ export function Header() {
           className="flex items-center gap-2 text-sm font-semibold tracking-tight text-zinc-950"
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-950 text-xs font-bold text-white shadow-sm">
-            CE
+            SS
           </span>
-          <span>Collab Editor</span>
+          <span>SyncSpace
+</span>
         </Link>
         <AuthNav />
       </div>

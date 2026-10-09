@@ -229,10 +229,18 @@ export async function syncDocument({
         },
         {
           isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          // Bounded acquisition/running budgets. The direct connection
+          // (port 5432) measures ~330ms per round trip from this network; a
+          // sync transaction does ~7 queries and burst-generated waiting must
+          // fit inside these budgets to avoid P2028. Far below the client's
+          // retry backoff, so timeouts remain recoverable.
+          maxWait: 10_000,
+          timeout: 15_000,
         },
       );
     } catch (error) {
       if (isRetryableError(error) && attempt < 2) {
+        await retryDelay(attempt);
         continue;
       }
 
@@ -282,6 +290,19 @@ function isRetryableError(error: unknown) {
   return (
     error instanceof RetryableSyncError ||
     (error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2034")
+      (error.code === "P2034" ||
+        // P2028 is a transient transaction-start failure (for example the
+        // connection pooler has no free slot). Nothing has executed or
+        // committed, so re-running the whole transaction is safe.
+        error.code === "P2028"))
   );
+}
+
+function retryDelay(attempt: number) {
+  const baseDelay = 50 * 2 ** attempt;
+  const jitter = Math.floor(Math.random() * baseDelay);
+
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, baseDelay + jitter);
+  });
 }

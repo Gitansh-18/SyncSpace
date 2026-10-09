@@ -2,6 +2,7 @@
 
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
+import { getSafeCallbackUrl } from "@/lib/auth/callback-url";
 import { loginSchema } from "@/lib/validations/auth";
 
 export type LoginState = {
@@ -21,11 +22,13 @@ export async function loginAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+
   try {
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/dashboard",
+      redirectTo: callbackUrl ?? "/dashboard",
     });
   } catch (error) {
     if (error instanceof AuthError) {

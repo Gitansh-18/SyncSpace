@@ -5,7 +5,11 @@ import { registerAction, type RegisterState } from "./actions";
 
 const initialState: RegisterState = {};
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  callbackUrl?: string;
+};
+
+export function RegisterForm({ callbackUrl }: RegisterFormProps) {
   const [state, formAction, pending] = useActionState(registerAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -18,6 +22,7 @@ export function RegisterForm() {
       ) : null}
 
       <form action={formAction} className="mt-6 space-y-4">
+        <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} />
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-zinc-700">
             Name

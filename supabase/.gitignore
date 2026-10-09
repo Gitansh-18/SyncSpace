@@ -1,0 +1,3 @@
+# Local Supabase CLI state - never commit.
+.temp
+branches.json

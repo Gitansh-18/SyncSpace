@@ -14,6 +14,11 @@ enum DocumentRole {
   VIEWER
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+}
+
 model User {
   id           String              @id @default(cuid())
   email        String              @unique
@@ -23,6 +28,7 @@ model User {
   updatedAt    DateTime            @updatedAt
   memberships  DocumentMember[]
   operations   DocumentOperation[]
+  invitations  Invitation[]
 }
 
 model Document {
@@ -35,6 +41,7 @@ model Document {
   updatedAt      DateTime            @updatedAt
   members        DocumentMember[]
   operations     DocumentOperation[]
+  invitations    Invitation[]
 }
 
 model DocumentMember {
@@ -51,6 +58,26 @@ model DocumentMember {
   @@unique([documentId, userId])
   @@index([userId])
   @@index([documentId])
+}
+
+model Invitation {
+  id          String           @id @default(cuid())
+  documentId  String
+  email       String
+  role        DocumentRole
+  tokenHash   String           @unique
+  status      InvitationStatus @default(PENDING)
+  invitedById String
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  invitedBy User    @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([documentId])
+  @@index([status])
 }
 
 model DocumentOperation {

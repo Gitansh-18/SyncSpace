@@ -4,9 +4,12 @@ import { LoginForm } from "./login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ registered?: string }>;
+  searchParams: Promise<{ registered?: string; callbackUrl?: string }>;
 }) {
   const params = await searchParams;
+  const signUpHref = params.callbackUrl
+    ? `/register?callbackUrl=${encodeURIComponent(params.callbackUrl)}`
+    : "/register";
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
@@ -23,11 +26,11 @@ export default async function LoginPage({
         </p>
       ) : null}
 
-      <LoginForm />
+      <LoginForm callbackUrl={params.callbackUrl} />
 
       <p className="mt-6 text-center text-sm text-zinc-600">
         No account yet?{" "}
-        <Link href="/register" className="font-medium text-zinc-900 hover:underline">
+        <Link href={signUpHref} className="font-medium text-zinc-900 hover:underline">
           Sign up
         </Link>
       </p>

@@ -117,9 +117,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 - The auth gate uses the Next.js 16 `proxy.ts` convention instead of deprecated middleware
 - Required production environment variables: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, and `AUTH_URL`
-- For Supabase on Vercel, use the transaction pooler on port `6543` for `DATABASE_URL` and include `pgbouncer=true`
-- For Prisma migrations, use a direct connection or session pooler on port `5432` for `DIRECT_URL`
-- Optional production environment variables: `GEMINI_API_KEY` and `GEMINI_MODEL`
+- This app runs as a single Next.js instance (not a serverless fan-out), so `DATABASE_URL` should use Supabase's **direct connection on port `5432`**. Measured from production networks the transaction pooler (port `6543`) adds around a second of latency per query, which stacks badly inside interactive transactions and caused Prisma's `P2028` "Unable to start a transaction in the given time" acquisition timeout. `connection_limit` keeps the pool small and bounded (well under Supabase's `max_connections`).
+- For Prisma migrations, `DIRECT_URL` also uses a direct connection on port `5432`. Do **not** add `pgbouncer=true` to either URL.
+- Invitation emails require the `send-invitation` Supabase Edge Function. Optional production environment variables: `GEMINI_API_KEY`, `GEMINI_MODEL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, and `RESEND_FROM`. `SUPABASE_SECRET_KEY` must be a new-format secret API key (`sb_secret_...`).
 - Run production migrations with `npm run db:deploy`
 - Verify a release with:
 
@@ -135,16 +135,26 @@ Before deploying, confirm the production database is reachable from the hosting 
 Supabase production connection example:
 
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://USER:PASSWORD@db.HOST.supabase.co:5432/postgres?connection_limit=5"
+DIRECT_URL="postgresql://USER:PASSWORD@db.HOST.supabase.co:5432/postgres"
 AUTH_URL="https://your-project.vercel.app"
 ```
 
-If your `DATABASE_URL` already contains a query string such as `?sslmode=require`, add `pgbouncer=true` with `&`:
+## Invitations (Module 11)
 
-```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true"
+- Owners can invite new collaborators by email even before they have an account
+- Each invitation stores only a SHA-256 hash of its token, expires after 7 days, and grants at most `Editor` or `Viewer` access (never `Owner`)
+- A partial unique index guarantees at most one pending invitation per document and email
+- Invitation emails are sent through the `send-invitation` Supabase Edge Function via Resend
+- Accepting an invitation creates the document membership and marks the invitation as used; opening an expired, used, or unknown link shows a friendly explanation
+- If the edge function or email provider is unavailable, no invitation row is left behind — the owner sees an error and can retry
+- Deploy the edge function with:
+
+```bash
+supabase functions deploy send-invitation
 ```
+
+Set `RESEND_API_KEY` (and optionally `RESEND_FROM`) as secrets in the Supabase project, and `SUPABASE_URL` / `SUPABASE_SECRET_KEY` in the app environment.
 
 ## Database scripts
 

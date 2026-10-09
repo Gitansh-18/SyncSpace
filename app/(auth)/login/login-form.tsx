@@ -5,7 +5,11 @@ import { loginAction, type LoginState } from "./actions";
 
 const initialState: LoginState = {};
 
-export function LoginForm() {
+type LoginFormProps = {
+  callbackUrl?: string;
+};
+
+export function LoginForm({ callbackUrl }: LoginFormProps) {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -18,6 +22,7 @@ export function LoginForm() {
       ) : null}
 
       <form action={formAction} className="mt-6 space-y-4">
+        <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} />
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-zinc-700">
             Email

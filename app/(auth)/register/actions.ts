@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { getSafeCallbackUrl } from "@/lib/auth/callback-url";
 import { hashPassword } from "@/lib/password";
 import { registerSchema } from "@/lib/validations/auth";
 
@@ -23,6 +24,8 @@ export async function registerAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+
   const existingUser = await db.user.findUnique({
     where: { email: parsed.data.email },
   });
@@ -41,5 +44,10 @@ export async function registerAction(
     },
   });
 
-  redirect("/login?registered=1");
+  const loginPath =
+    callbackUrl && callbackUrl !== "/login"
+      ? `/login?registered=1&callbackUrl=${encodeURIComponent(callbackUrl)}`
+      : "/login?registered=1";
+
+  redirect(loginPath);
 }

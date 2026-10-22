@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
-
 async function SignOutButton() {
   return (
     <form
